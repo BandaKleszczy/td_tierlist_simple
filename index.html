@@ -724,9 +724,15 @@ document.getElementById('importFile').addEventListener('change', function() {
   };
   reader.readAsText(file);
 });
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(() => console.log('Service Worker zarejestrowany'))
+    .catch(err => console.error('SW error:', err));
+}
 </script>
 
 </body>
 </html>
+
 
 
