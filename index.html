@@ -157,6 +157,73 @@
 </div>
 
 <script>
+
+// ---------------- IndexedDB obrazków ----------------
+const DB_NAME = 'td_tierlist_images';
+const DB_VERSION = 1;
+const STORE_NAME = 'images';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = e => resolve(e.target.result);
+    request.onerror = e => reject(e.target.error);
+  });
+}
+
+async function saveImageToDB(key, blob) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(blob, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+
+async function getImageFromDB(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const request = tx.objectStore(STORE_NAME).get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = e => reject(e.target.error);
+  });
+}
+
+async function cacheAllImages() {
+  const allImgs = [
+    ...maps.map(m => m.img),
+    ...heroes.map(h => h.img),
+    ...towers.map(t => t.img)
+  ];
+
+  for (const url of allImgs) {
+    const existing = await getImageFromDB(url);
+    if (!existing) {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      await saveImageToDB(url, blob);
+    }
+  }
+  console.log('✅ Wszystkie obrazki zapisane w IndexedDB');
+}
+
+async function loadImageFromCacheOrNetwork(url, imgElement) {
+  const blob = await getImageFromDB(url);
+  if (blob) {
+    imgElement.src = URL.createObjectURL(blob);
+  } else {
+    imgElement.src = url;
+  }
+}
+
   // Przykładowe dane: mapy, herosi, wieże jako proste kolorowe "obrazki" (tekst w ramce)
   const maps = [
   { id: 'BananaDepot', name: 'Banana Depot', img: 'maps/Banana Depot.png' },
@@ -236,6 +303,7 @@
     { id: 'MonkeyVillage', name: 'Monkey Village', img: 'towers/MonkeyVillage.png' },
     { id: 'EngineerMonkey', name: 'Engineer Monkey', img: 'towers/EngineerMonkey.png' },
   ];
+cacheAllImages();
 
   const mapListEl = document.getElementById('mapList');
   const mapImageWrapper = document.getElementById('mapImageWrapper');
@@ -394,7 +462,7 @@ heroThumb.className = 'thumb';
 
 if (hero?.img) {
   const img = document.createElement('img');
-  img.src = hero.img;
+  loadImageFromCacheOrNetwork(hero.img, img);
   img.alt = hero.name;
   img.style.maxWidth = '100%';
   img.style.maxHeight = '100%';
@@ -415,7 +483,7 @@ lo.towers.forEach(tid => {
 
   if (tower?.img) {
     const img = document.createElement('img');
-    img.src = tower.img;
+    loadImageFromCacheOrNetwork(tower.img, img);
     img.alt = tower.name;
     img.style.maxWidth = '100%';
     img.style.maxHeight = '100%';
@@ -561,7 +629,7 @@ heroThumb.className = 'thumb';
 
 if (hero?.img) {
   const img = document.createElement('img');
-  img.src = hero.img;
+  loadImageFromCacheOrNetwork(hero.img, img);
   img.alt = hero.name;
   img.style.maxWidth = '100%';
   img.style.maxHeight = '100%';
@@ -581,7 +649,7 @@ lo.towers.forEach(tid => {
 
   if (tower?.img) {
     const img = document.createElement('img');
-    img.src = tower.img;
+    loadImageFromCacheOrNetwork(tower.img, img);
     img.alt = tower.name;
     img.style.maxWidth = '100%';
     img.style.maxHeight = '100%';
@@ -665,7 +733,7 @@ function checkAssetFiles() {
       img.onload = () => console.log(`OK   ${kind} ${item.id}: ${resolved}`);
       img.onerror = () => console.error(`BROKEN ${kind} ${item.id}: ${resolved}`);
       // przypisz src dopiero po ustawieniu onload/onerror
-      img.src = item.img;
+      loadImageFromCacheOrNetwork(item.img, img);
     });
   }
   testList(heroes, 'HERO');
