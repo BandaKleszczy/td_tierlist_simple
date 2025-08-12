@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TD Tierlist - uproszczona wersja</title>
+<style>
+  body {
+    margin:0; font-family: system-ui, sans-serif; background:#121a2a; color:#eee;
+    display: grid; grid-template-columns: 260px 1fr 420px; gap: 12px; height: 100vh; padding: 12px;
+  }
+  .panel {
+    background: #1b2541; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; overflow: auto;
+  }
+  h2, h3 { margin-top: 0; }
+  .map-list {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .map-item {
+    cursor: pointer; padding: 8px; border-radius: 6px; background: #162038; display: flex; align-items: center; gap: 12px;
+  }
+  .map-item.selected {
+    background: #0e1628;
+    border: 2px solid #0ea5a4;
+  }
+  .map-item .thumb {
+    width: 64px; height: 40px; border-radius: 6px;
+    background: #555; color: #ccc; display:flex; justify-content:center; align-items:center; font-weight:bold; user-select:none;
+  }
+  .tiers-container {
+    display: flex; flex-direction: column; gap: 12px; height: 100%;
+  }
+  .tier {
+    width: 100%;
+  }
+  .tier-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+  }
+  .tier-header input {
+    background: #0f1724; border: none; color: #eee; font-weight: bold; font-size: 16px; border-radius: 4px; padding: 2px 6px;
+    width: 100%;
+  }
+  .tier-header button {
+    background: #0ea5a4; border: none; color: #042022; font-weight: bold; font-size: 20px; cursor: pointer;
+    border-radius: 6px; width: 30px; height: 30px;
+  }
+  .tier-loadouts {
+    flex: 1; overflow-y: auto; background: #0f1724; border-radius: 6px; padding: 6px; 
+  }
+  .loadout-card {
+    background: #0e1628; border-radius: 6px; padding: 6px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px; font-size: 14px;
+    user-select:none;
+  }
+  .loadout-card .thumb {
+    width: 32px; height: 32px; border-radius: 4px;
+    display:flex; justify-content:center; align-items:center; font-size: 12px; font-weight: bold;
+    color: #ccc; user-select:none;
+  }
+  .loadout-names {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .loadout-actions button {
+    background: #dc2626; border: none; color: white; font-weight: bold; font-size: 14px; 
+    cursor: pointer; border-radius: 4px; padding: 4px 6px;
+  }
+  #addLoadoutPanel {
+    margin-top: 12px; background: #162a42; padding: 12px; border-radius: 8px;
+  }
+  #addLoadoutPanel select {
+    background: #0f1724; border: none; color: #eee; border-radius: 4px; padding: 6px;
+    font-size: 14px; margin-right: 8px;
+    min-width: 120px;
+  }
+  #addLoadoutPanel button {
+    background: #0ea5a4; border: none; color: #042022; font-weight: bold; cursor: pointer;
+    border-radius: 6px; padding: 8px 12px;
+  }
+  /* Popup Polecane */
+  #recommendedPopup {
+    display:none; position:fixed; top:60px; right:60px; width:350px; max-height:400px;
+    background:#1b2541; border-radius:8px; padding:12px; box-shadow:0 0 15px #0ea5a4; overflow-y:auto; z-index:1000;
+  }
+  #recommendedPopup h3 {
+    margin-top:0; display:flex; justify-content:space-between; align-items:center;
+  }
+  #recommendedPopup button.close {
+    background:#dc2626; border:none; border-radius:6px; color:#fff; cursor:pointer; padding:4px 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h2>Maps</h2>
+  <div class="map-list" id="mapList"></div>
+</div>
+
+<div class="panel" id="mapView">
+  <h2>Wybierz mapę</h2>
+  <div id="mapImageWrapper" style="flex:1; background:#0f1724; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+    <span style="color:#777;">Brak wybranej mapy</span>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="display:flex; justify-content:space-between; align-items:center;">
+    Loadouts tier list
+    <button id="showRecommendedBtn" title="Polecane loadouty" style="background:#0ea5a4; border:none; border-radius:6px; color:#042022; cursor:pointer; padding:4px 8px; font-weight:bold;">
+      Recommended
+    </button>
+  </h2>
+  <button id="addTierBtn" style="margin-bottom:12px; padding:8px 12px; border:none; border-radius:6px; background:#0ea5a4; color:#042022; cursor:pointer;">
+    + Add tier
+  </button>
+  <div class="tiers-container" id="tiersContainer"></div>
+
+  <div id="addLoadoutPanel" style="display:none;">
+    <h3>Add new loadout</h3>
+    <select id="heroSelect" title="Wybierz hero">
+      <option value="">-- Wybierz hero --</option>
+    </select>
+    <select id="tower1Select" title="Wieża 1">
+      <option value="">-- Wieża 1 --</option>
+    </select>
+    <select id="tower2Select" title="Wieża 2 (opcjonalnie)">
+      <option value="">-- Wieża 2 (opcjonalnie) --</option>
+    </select>
+    <select id="tower3Select" title="Wieża 3 (opcjonalnie)">
+      <option value="">-- Wieża 3 (opcjonalnie) --</option>
+    </select>
+    <button id="addLoadoutBtn">Add loadout to tier</button>
+  </div>
+</div>
+
+<!-- Popup Polecane -->
+<div id="recommendedPopup">
+  <h3>
+    Recommended loadouts
+    <button id="closeRecommendedBtn" class="close">✕</button>
+  </h3>
+  <div id="recommendedList" style="display:flex; flex-direction:column; gap:6px;"></div>
+</div>
+
+<script>
+  // Przykładowe dane: mapy, herosi, wieże jako proste kolorowe "obrazki" (tekst w ramce)
+  const maps = [
+  { id: 'BananaDepot', name: 'Banana Depot', img: 'maps/Banana Depot.png' },
+  { id: 'BasaltColumns', name: 'Basalt Columns', img: 'maps/Basalt Columns.png' },
+  { id: 'BloonstoneQuarry', name: 'Bloonstone Quarry', img: 'maps/Bloonstone Quarry.png' },
+  { id: 'BotFactory', name: 'Bot Factory', img: 'maps/Bot Factory.png' },
+  { id: 'BuildingSite', name: 'Building Site', img: 'maps/Building Site.png' },
+  { id: 'CastleRuins', name: 'Castle Ruins', img: 'maps/Castle Ruins.png' },
+  { id: 'CobraCommand', name: 'Cobra Command', img: 'maps/Cobra Command.png' },
+  { id: 'DinoGraveyard', name: 'Dino Graveyard', img: 'maps/Dino Graveyard.png' },
+  { id: 'Garden', name: 'Garden', img: 'maps/Garden.png' },
+  { id: 'Glade', name: 'Glade', img: 'maps/Glade.png' },
+  { id: 'Inflection', name: 'Inflection', img: 'maps/Inflection.png' },
+  { id: 'Koru', name: 'Koru', img: 'maps/Koru.png' },
+  { id: 'NeoHighway', name: 'Neo Highway', img: 'maps/Neo Highway.png' },
+  { id: 'Oasis', name: 'Oasis', img: 'maps/Oasis.png' },
+  { id: 'OffTide', name: 'Off Tide', img: 'maps/Off Tide.png' },
+  { id: 'PirateCove', name: 'Pirate Cove', img: 'maps/Pirate Cove.png' },
+  { id: 'Ports', name: 'Ports', img: 'maps/Ports.png' },
+  { id: 'PreciousSpace', name: 'Precious Space', img: 'maps/Precious Space.png' },
+  { id: 'SalmonLadder', name: 'Salmon Ladder', img: 'maps/Salmon Ladder.png' },
+  { id: 'SandsofTime', name: 'Sands of Time', img: 'maps/Sands of Time.png' },
+  { id: 'Splashdown', name: 'Splashdown', img: 'maps/Splashdown.png' },
+  { id: 'Star', name: 'Star', img: 'maps/Star.png' },
+  { id: 'StreetParty', name: 'Street Party', img: 'maps/Street Party.png' },
+  { id: 'SunPalace', name: 'Sun Palace', img: 'maps/Sun Palace.png' },
+  { id: 'TimesUp', name: 'Times Up', img: 'maps/Times Up.png' },
+]
+  const heroes = [
+    { id: 'Quincy', name: 'Quincy', img: 'heroes/Quincy.png' },
+    { id: 'QuincyCyber', name: 'Cyber Quincy', img: 'heroes/QuincyCyber.png' },
+    { id: 'Gwendolin', name: 'Gwendolin', img: 'heroes/Gwendolin.png' },
+    { id: 'GwendolinScientist', name: 'Scientist Gwendolin', img: 'heroes/GwendolinScientist.png' },
+    { id: 'StrikerJones', name: 'Striker Jones', img: 'heroes/StrikerJones.png' },
+    { id: 'BikerBones', name: 'Biker Bones', img: 'heroes/BikerBones.png' },
+    { id: 'ObynGreenFoot', name: 'Obyn Greenfoot', img: 'heroes/ObynGreenFoot.png' },
+    { id: 'OceanObyn', name: 'Ocean Obyn', img: 'heroes/OceanObyn.png' },
+    { id: 'CaptainChurchill', name: 'Captain Churchill', img: 'heroes/CaptainChurchill.png' },
+    { id: 'SentaiChurchill', name: 'Sentai Churchill', img: 'heroes/SentaiChurchill.png' },
+    { id: 'Benjamin', name: 'Benjamin', img: 'heroes/Benjamin.png' },
+    { id: 'DjBenJammin', name: 'Dj BenJammin', img: 'heroes/DjBenJammin.png' },
+    { id: 'Ezili', name: 'Ezili', img: 'heroes/Ezili.png' },
+    { id: 'SmudgeCatEzili', name: 'Smudge Cat Ezili', img: 'heroes/SmudgeCatEzili.png' },
+    { id: 'PatFusty', name: 'Pat Fusty', img: 'heroes/PatFusty.png' },
+    { id: 'FustyTheSnowman', name: 'Fusty The Snowman', img: 'heroes/FustyTheSnowman.png' },
+    { id: 'Jericho', name: 'Jericho', img: 'heroes/Jericho.png' },
+    { id: 'HighwaymanJericho', name: 'Highwayman Jericho', img: 'heroes/HighwaymanJericho.png' },
+    { id: 'StarCaptainJericho', name: 'Star Captain Jericho', img: 'heroes/StarCaptainJericho.png' },
+    { id: 'Adora', name: 'Adora', img: 'heroes/Adora.png' },
+    { id: 'FateweaverAdora', name: 'Fateweaver Adora', img: 'heroes/FateweaverAdora.png' },
+    { id: 'Etienne', name: 'Etienne', img: 'heroes/Etienne.png' },
+    { id: 'Beetienne', name: 'Beetienne', img: 'heroes/Beetienne.png' },
+    { id: 'Bonnie', name: 'Bonnie', img: 'heroes/Bonnie.png' },
+
+  ];
+  const towers = [
+    { id: 'DartMonkey', name: 'Dart Monkey', img: 'towers/DartMonkey.png' },
+    { id: 'BoomerangMonkey', name: 'Boomerang Monkey', img: 'towers/BoomerangMonkey.png' },
+    { id: 'BombShooter', name: 'Bomb Shooter', img: 'towers/BombShooter.png' },
+    { id: 'TackShooter', name: 'Tack Shooter', img: 'towers/TackShooter.png' },
+    { id: 'IceMonkey', name: 'Ice Monkey', img: 'towers/IceMonkey.png' },
+    { id: 'GlueGunner', name: 'Glue Gunner', img: 'towers/GlueGunner.png' },
+    { id: 'SniperMonkey', name: 'Sniper Monkey', img: 'towers/SniperMonkey.png' },
+    { id: 'MonkeySub', name: 'Monkey Sub', img: 'towers/MonkeySub.png' },
+    { id: 'MonkeyBuccaneer', name: 'Monkey Buccaneer', img: 'towers/MonkeyBuccaneer.png' },
+    { id: 'MonkeyAce', name: 'Monkey Ace', img: 'towers/MonkeyAce.png' },
+    { id: 'HeliPilot', name: 'Heli Pilot', img: 'towers/HeliPilot.png' },
+    { id: 'MortarMonkey', name: 'Mortar Monkey', img: 'towers/MortarMonkey.png' },
+    { id: 'DartlingGunner', name: 'Dartling Gunner', img: 'towers/DartlingGunner.png' },
+    { id: 'WizardMonkey', name: 'Wizard Monkey', img: 'towers/WizardMonkey.png' },
+    { id: 'SuperMonkey', name: 'Super Monkey', img: 'towers/SuperMonkey.png' },
+    { id: 'NinjaMonkey', name: 'Ninja Monkey', img: 'towers/NinjaMonkey.png' },
+    { id: 'Alchemist', name: 'Alchemist', img: 'towers/Alchemist.png' },
+    { id: 'Druid', name: 'Druid', img: 'towers/Druid.png' },
+    { id: 'BananaFarm', name: 'Banana Farm', img: 'towers/BananaFarm.png' },
+    { id: 'SpikeFactory', name: 'Spike Factory', img: 'towers/SpikeFactory.png' },
+    { id: 'MonkeyVillage', name: 'Monkey Village', img: 'towers/MonkeyVillage.png' },
+    { id: 'EngineerMonkey', name: 'Engineer Monkey', img: 'towers/EngineerMonkey.png' },
+  ];
+
+  const mapListEl = document.getElementById('mapList');
+  const mapImageWrapper = document.getElementById('mapImageWrapper');
+  const tiersContainer = document.getElementById('tiersContainer');
+  const addTierBtn = document.getElementById('addTierBtn');
+
+  const addLoadoutPanel = document.getElementById('addLoadoutPanel');
+  const heroSelect = document.getElementById('heroSelect');
+  const tower1Select = document.getElementById('tower1Select');
+  const tower2Select = document.getElementById('tower2Select');
+  const tower3Select = document.getElementById('tower3Select');
+  const addLoadoutBtn = document.getElementById('addLoadoutBtn');
+
+  const recommendedPopup = document.getElementById('recommendedPopup');
+  const recommendedList = document.getElementById('recommendedList');
+  const showRecommendedBtn = document.getElementById('showRecommendedBtn');
+  const closeRecommendedBtn = document.getElementById('closeRecommendedBtn');
+
+  let selectedMapIndex = null;
+  let tiers = [];
+
+  // Globalna lista polecanych loadoutów
+  let recommendedLoadouts = [];
+  const recommendedKey = 'td_recommended_loadouts';
+
+  // Render map jako przycisków z kolorowym prostokątem
+  function renderMaps() {
+    mapListEl.innerHTML = '';
+maps.forEach((mapObj, idx) => {
+  const div = document.createElement('div');
+  div.className = 'map-item';
+  if (selectedMapIndex === idx) div.classList.add('selected');
+
+  div.innerHTML = `
+    <div class="thumb" style="background:#334155;">
+      <img src="${mapObj.img}" alt="${mapObj.name}" style="max-width:100%; max-height:100%; object-fit:cover; border-radius:6px;" />
+    </div>
+    <div>${mapObj.name}</div>
+  `;
+
+  div.addEventListener('click', () => selectMap(idx));
+  mapListEl.appendChild(div);
+});
+  }
+
+  // Pokaz mapę (tu prostokąt z nazwą)
+  function selectMap(idx) {
+    selectedMapIndex = idx;
+    renderMaps();
+    const map = maps[idx];
+mapImageWrapper.innerHTML = `<img src="${map.img}" alt="${map.name}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;" />`;
+    loadTiers();
+    addLoadoutPanel.style.display = 'block';
+  }
+
+  // Load / Save tiers z localStorage
+  function loadTiers() {
+    if(selectedMapIndex === null) return;
+    const key = `td_map_${selectedMapIndex}_tiers`;
+    const stored = localStorage.getItem(key);
+    if(stored) {
+      tiers = JSON.parse(stored);
+    } else {
+      tiers = [
+        { id: 'tier1', name: 'S', loadouts: [] },
+        { id: 'tier2', name: 'A', loadouts: [] },
+        { id: 'tier3', name: 'B', loadouts: [] },
+      ];
+    }
+    renderTiers();
+  }
+  function saveTiers() {
+    if(selectedMapIndex === null) return;
+    const key = `td_map_${selectedMapIndex}_tiers`;
+    localStorage.setItem(key, JSON.stringify(tiers));
+  }
+
+  // Render tiers z obsługą drag & drop loadoutów
+  function renderTiers() {
+    tiersContainer.innerHTML = '';
+    tiers.forEach((tier, i) => {
+      const tierDiv = document.createElement('div');
+      tierDiv.className = 'tier';
+      tierDiv.dataset.tierId = tier.id;
+
+      const header = document.createElement('div');
+      header.className = 'tier-header';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = tier.name;
+      input.addEventListener('change', (e) => {
+        tier.name = e.target.value.trim() || tier.name;
+        saveTiers();
+        renderTiers();
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '−';
+      delBtn.title = 'Usuń tier';
+      delBtn.addEventListener('click', () => {
+        if(!confirm(`Usunąć tier "${tier.name}"?`)) return;
+        tiers.splice(i,1);
+        saveTiers();
+        renderTiers();
+      });
+
+      header.appendChild(input);
+      header.appendChild(delBtn);
+
+      const loadoutsDiv = document.createElement('div');
+      loadoutsDiv.className = 'tier-loadouts';
+
+      // Drag&drop obsługa tieru
+      loadoutsDiv.addEventListener('dragover', e => {
+        e.preventDefault();
+        loadoutsDiv.style.backgroundColor = '#205060';
+      });
+      loadoutsDiv.addEventListener('dragleave', e => {
+        loadoutsDiv.style.backgroundColor = '#0f1724';
+      });
+      loadoutsDiv.addEventListener('drop', e => {
+        e.preventDefault();
+        loadoutsDiv.style.backgroundColor = '#0f1724';
+        const data = e.dataTransfer.getData('text/plain');
+        if (!data) return;
+        const [draggedTierId, loadoutIndexStr] = data.split(':');
+        const loadoutIndex = parseInt(loadoutIndexStr, 10);
+        if (draggedTierId === tier.id) return; // to samo miejsce
+
+        const oldTier = tiers.find(t => t.id === draggedTierId);
+        if (!oldTier) return;
+        const [movedLoadout] = oldTier.loadouts.splice(loadoutIndex, 1);
+        if (!movedLoadout) return;
+        tier.loadouts.push(movedLoadout);
+        saveTiers();
+        renderTiers();
+      });
+
+      // Render loadoutów z draggable
+      tier.loadouts.forEach((lo, idx) => {
+        const loDiv = document.createElement('div');
+        loDiv.className = 'loadout-card';
+        loDiv.setAttribute('draggable', 'true');
+        loDiv.style.userSelect = 'none';
+
+        loDiv.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', `${tier.id}:${idx}`);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+// hero
+const hero = heroes.find(h => h.id === lo.hero);
+const heroThumb = document.createElement('div');
+heroThumb.className = 'thumb';
+
+if (hero?.img) {
+  const img = document.createElement('img');
+  img.src = hero.img;
+  img.alt = hero.name;
+  img.style.maxWidth = '100%';
+  img.style.maxHeight = '100%';
+  img.style.objectFit = 'cover';
+  heroThumb.appendChild(img);
+} else {
+  heroThumb.textContent = hero?.name || '?';
+}
+
+heroThumb.title = hero?.name || '?';
+loDiv.appendChild(heroThumb);
+
+// wieże
+lo.towers.forEach(tid => {
+  const tower = towers.find(t => t.id === tid);
+  const towerThumb = document.createElement('div');
+  towerThumb.className = 'thumb';
+
+  if (tower?.img) {
+    const img = document.createElement('img');
+    img.src = tower.img;
+    img.alt = tower.name;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'cover';
+    towerThumb.appendChild(img);
+  } else {
+    towerThumb.textContent = tower?.name || '?';
+  }
+
+  towerThumb.title = tower?.name || '?';
+  loDiv.appendChild(towerThumb);
+});
+//        const namesDiv = document.createElement('div');
+//        namesDiv.className = 'loadout-names';
+//        const heroName = hero?.name || '?';
+//        const towerNames = lo.towers.map(tid => towers.find(t => t.id === tid)?.name || '?');
+//        namesDiv.textContent = heroName + ' + ' + towerNames.join(', ');
+//        loDiv.appendChild(namesDiv);
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'loadout-actions';
+
+        const delLoBtn = document.createElement('button');
+        delLoBtn.textContent = 'Delete';
+        delLoBtn.title = 'Usuń loadout';
+        delLoBtn.addEventListener('click', () => {
+          if(!confirm('Usunąć ten loadout?')) return;
+          tier.loadouts.splice(idx, 1);
+          saveTiers();
+          renderTiers();
+        });
+
+        actionsDiv.appendChild(delLoBtn);
+        loDiv.appendChild(actionsDiv);
+
+        loadoutsDiv.appendChild(loDiv);
+      });
+
+      tierDiv.appendChild(header);
+      tierDiv.appendChild(loadoutsDiv);
+
+      tiersContainer.appendChild(tierDiv);
+    });
+  }
+
+  // Inicjalizacja selectów hero i wież
+  function initLoadoutSelectors() {
+    heroSelect.innerHTML = '<option value="">-- Select hero --</option>';
+    heroes.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h.id;
+      opt.textContent = h.name;
+      heroSelect.appendChild(opt);
+    });
+    function fillTowerSelect(sel, label) {
+      sel.innerHTML = `<option value="">-- ${label} --</option>`;
+      towers.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        sel.appendChild(opt);
+      });
+    }
+    fillTowerSelect(tower1Select, 'Tower 1');
+    fillTowerSelect(tower2Select, 'Tower 2');
+    fillTowerSelect(tower3Select, 'Tower 3');
+  }
+
+  // Dodaj nowy tier
+  addTierBtn.addEventListener('click', () => {
+    const newId = 'tier' + (tiers.length + 1) + '_' + Date.now();
+    tiers.push({ id: newId, name: 'New tier', loadouts: [] });
+    saveTiers();
+    renderTiers();
+  });
+
+  // Dodaj loadout do wybranego tieru (domyślnie pierwszy tier)
+  addLoadoutBtn.addEventListener('click', () => {
+    if (selectedMapIndex === null) return alert('Wybierz najpierw mapę.');
+    const hero = heroSelect.value;
+    if (!hero) return alert('Wybierz hero.');
+    const t1 = tower1Select.value;
+    const t2 = tower2Select.value;
+    const t3 = tower3Select.value;
+    if (!t1) return alert('Wybierz przynajmniej Wieżę 1.');
+
+    const towersChosen = [t1];
+    if (t2) towersChosen.push(t2);
+    if (t3) towersChosen.push(t3);
+
+    // Dodajemy do pierwszego tieru na liście
+    if (tiers.length === 0) {
+      alert('Dodaj najpierw tier.');
+      return;
+    }
+    tiers[0].loadouts.push({ hero, towers: towersChosen });
+
+    // Dodaj też do polecanych jeśli nie ma
+    if (!recommendedLoadouts.find(lo =>
+      lo.hero === hero &&
+      JSON.stringify(lo.towers) === JSON.stringify(towersChosen)
+    )) {
+      recommendedLoadouts.push({ hero, towers: towersChosen });
+      saveRecommended();
+    }
+
+    saveTiers();
+    renderTiers();
+  });
+
+  // Zarządzanie polecanymi loadoutami
+  function loadRecommended() {
+    const stored = localStorage.getItem(recommendedKey);
+    recommendedLoadouts = stored ? JSON.parse(stored) : [];
+  }
+  function saveRecommended() {
+    localStorage.setItem(recommendedKey, JSON.stringify(recommendedLoadouts));
+  }
+
+  // Pokaż / ukryj popup polecanych
+  showRecommendedBtn.addEventListener('click', () => {
+    recommendedPopup.style.display = 'block';
+    renderRecommended();
+  });
+  closeRecommendedBtn.addEventListener('click', () => {
+    recommendedPopup.style.display = 'none';
+  });
+
+  // Renderuj polecane loadouty (w popupie)
+  function renderRecommended() {
+    recommendedList.innerHTML = '';
+    if (recommendedLoadouts.length === 0) {
+      recommendedList.textContent = 'Brak polecanych loadoutów.';
+      return;
+    }
+    recommendedLoadouts.forEach((lo, idx) => {
+      const loDiv = document.createElement('div');
+      loDiv.className = 'loadout-card';
+
+const hero = heroes.find(h => h.id === lo.hero);
+const heroThumb = document.createElement('div');
+heroThumb.className = 'thumb';
+
+if (hero?.img) {
+  const img = document.createElement('img');
+  img.src = hero.img;
+  img.alt = hero.name;
+  img.style.maxWidth = '100%';
+  img.style.maxHeight = '100%';
+  img.style.objectFit = 'cover';
+  heroThumb.appendChild(img);
+} else {
+  heroThumb.textContent = hero?.name || '?';
+}
+
+heroThumb.title = hero?.name || '?';
+loDiv.appendChild(heroThumb);
+
+lo.towers.forEach(tid => {
+  const tower = towers.find(t => t.id === tid);
+  const towerThumb = document.createElement('div');
+  towerThumb.className = 'thumb';
+
+  if (tower?.img) {
+    const img = document.createElement('img');
+    img.src = tower.img;
+    img.alt = tower.name;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'cover';
+    towerThumb.appendChild(img);
+  } else {
+    towerThumb.textContent = tower?.name || '?';
+  }
+
+  towerThumb.title = tower?.name || '?';
+  loDiv.appendChild(towerThumb);
+});
+
+//      const namesDiv = document.createElement('div');
+//      namesDiv.className = 'loadout-names';
+//      const heroName = hero?.name || '?';
+//      const towerNames = lo.towers.map(tid => towers.find(t => t.id === tid)?.name || '?');
+//      namesDiv.textContent = heroName + ' + ' + towerNames.join(', ');
+//      loDiv.appendChild(namesDiv);
+
+      // Dodaj do tieru (domyślnie pierwszego)
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '+ To tier';
+      addBtn.title = 'Dodaj ten loadout do pierwszego tieru';
+      addBtn.style.background = '#0ea5a4';
+      addBtn.style.border = 'none';
+      addBtn.style.color = '#042022';
+      addBtn.style.fontWeight = 'bold';
+      addBtn.style.borderRadius = '6px';
+      addBtn.style.padding = '4px 8px';
+      addBtn.style.cursor = 'pointer';
+      addBtn.addEventListener('click', () => {
+        if (tiers.length === 0) {
+          alert('Dodaj najpierw tier.');
+          return;
+        }
+        // Nie dodawaj duplikatu
+        if (tiers[0].loadouts.find(existing =>
+          existing.hero === lo.hero &&
+          JSON.stringify(existing.towers.sort()) === JSON.stringify(lo.towers.sort())
+        )) {
+          alert('Ten loadout jest już w pierwszym tierze.');
+          return;
+        }
+        tiers[0].loadouts.push({ hero: lo.hero, towers: [...lo.towers] });
+        saveTiers();
+        renderTiers();
+        alert('Dodano loadout do tieru.');
+      });
+
+      loDiv.appendChild(addBtn);
+
+// Przycisk usuwania loadoutu z polecanych
+const delBtn = document.createElement('button');
+delBtn.textContent = 'Delete';
+delBtn.title = 'Usuń ten loadout z polecanych';
+delBtn.style.background = '#dc2626';
+delBtn.style.border = 'none';
+delBtn.style.color = '#fff';
+delBtn.style.fontWeight = 'bold';
+delBtn.style.borderRadius = '6px';
+delBtn.style.padding = '4px 8px';
+delBtn.style.cursor = 'pointer';
+delBtn.addEventListener('click', () => {
+  if (!confirm('Na pewno usunąć ten loadout z polecanych?')) return;
+  recommendedLoadouts.splice(idx, 1);
+  saveRecommended();
+  renderRecommended();
+});
+
+loDiv.appendChild(delBtn);
+      recommendedList.appendChild(loDiv);
+    });
+  }
+// DIAGNOSTYKA: sprawdź dostępność plików obrazków
+function checkAssetFiles() {
+  function testList(list, kind) {
+    list.forEach(item => {
+      const resolved = new URL(item.img, location.href).href;
+      const img = new Image();
+      img.onload = () => console.log(`OK   ${kind} ${item.id}: ${resolved}`);
+      img.onerror = () => console.error(`BROKEN ${kind} ${item.id}: ${resolved}`);
+      // przypisz src dopiero po ustawieniu onload/onerror
+      img.src = item.img;
+    });
+  }
+  testList(heroes, 'HERO');
+  testList(towers, 'TOWER');
+}
+// wywołaj test w init() albo ręcznie w konsoli
+checkAssetFiles();
+  // Inicjalizacja
+  function init() {
+    renderMaps();
+    initLoadoutSelectors();
+    loadRecommended();
+  }
+  init();
+
+</script>
+
+</body>
+</html>
