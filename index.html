@@ -506,6 +506,69 @@ lo.towers.forEach(tid => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'loadout-actions';
 
+        // Przycisk komentarza 💬
+        const commentBtn = document.createElement('button');
+        commentBtn.textContent = '💬';
+        commentBtn.title = 'Dodaj / edytuj komentarz';
+        commentBtn.style.marginRight = '4px';
+        commentBtn.style.background = '#0ea5a4';
+        commentBtn.style.border = 'none';
+        commentBtn.style.color = '#042022';
+        commentBtn.style.fontSize = '14px';
+        commentBtn.style.cursor = 'pointer';
+        commentBtn.style.borderRadius = '4px';
+        commentBtn.style.padding = '2px 4px';
+        commentBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Usuń istniejący popup, jeśli jest
+          const existingPopup = document.querySelector('.comment-popup');
+          if (existingPopup) existingPopup.remove();
+          const popup = document.createElement('div');
+          popup.className = 'comment-popup';
+          popup.style.position = 'absolute';
+          popup.style.background = '#1b2541';
+          popup.style.border = '1px solid #0ea5a4';
+          popup.style.borderRadius = '6px';
+          popup.style.padding = '6px';
+          popup.style.zIndex = 2000;
+          popup.style.boxShadow = '0 0 8px rgba(0,0,0,0.5)';
+          popup.style.top = (e.clientY - 40) + 'px';
+          popup.style.left = (e.clientX + 10) + 'px';
+
+          const textarea = document.createElement('textarea');
+          textarea.rows = 3;
+          textarea.cols = 20;
+          textarea.value = lo.comment || '';
+          textarea.style.width = '200px';
+          textarea.style.background = '#0f1724';
+          textarea.style.color = '#fff';
+          textarea.style.border = '1px solid #0ea5a4';
+          textarea.style.borderRadius = '4px';
+          textarea.style.marginBottom = '4px';
+
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Zapisz';
+          saveBtn.style.background = '#0ea5a4';
+          saveBtn.style.border = 'none';
+          saveBtn.style.color = '#042022';
+          saveBtn.style.cursor = 'pointer';
+          saveBtn.style.borderRadius = '4px';
+          saveBtn.style.padding = '4px 6px';
+          saveBtn.addEventListener('click', () => {
+            lo.comment = textarea.value.trim();
+            saveTiers();
+            popup.remove();
+            renderTiers();
+          });
+
+          popup.appendChild(textarea);
+          popup.appendChild(document.createElement('br'));
+          popup.appendChild(saveBtn);
+          document.body.appendChild(popup);
+        });
+
+        actionsDiv.appendChild(commentBtn);
+
         const delLoBtn = document.createElement('button');
         delLoBtn.textContent = 'Delete';
         delLoBtn.title = 'Usuń loadout';
@@ -517,6 +580,20 @@ lo.towers.forEach(tid => {
         });
 
         actionsDiv.appendChild(delLoBtn);
+
+        // Jeśli jest komentarz, pokaż go pod loadoutem
+        if (lo.comment) {
+          const commentDiv = document.createElement('div');
+          commentDiv.textContent = lo.comment;
+          commentDiv.style.fontSize = '12px';
+          commentDiv.style.color = '#ccc';
+          commentDiv.style.marginTop = '2px';
+          commentDiv.style.background = '#162038';
+          commentDiv.style.padding = '2px 4px';
+          commentDiv.style.borderRadius = '4px';
+          commentDiv.style.flexBasis = '100%';
+          loDiv.appendChild(commentDiv);
+        }
         loDiv.appendChild(actionsDiv);
 
         loadoutsDiv.appendChild(loDiv);
