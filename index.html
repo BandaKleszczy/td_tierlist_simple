@@ -580,20 +580,6 @@ lo.towers.forEach(tid => {
         });
 
         actionsDiv.appendChild(delLoBtn);
-
-        // Jeśli jest komentarz, pokaż go pod loadoutem
-        if (lo.comment) {
-          const commentDiv = document.createElement('div');
-          commentDiv.textContent = lo.comment;
-          commentDiv.style.fontSize = '12px';
-          commentDiv.style.color = '#ccc';
-          commentDiv.style.marginTop = '2px';
-          commentDiv.style.background = '#162038';
-          commentDiv.style.padding = '2px 4px';
-          commentDiv.style.borderRadius = '4px';
-          commentDiv.style.flexBasis = '100%';
-          loDiv.appendChild(commentDiv);
-        }
         loDiv.appendChild(actionsDiv);
 
         loadoutsDiv.appendChild(loDiv);
