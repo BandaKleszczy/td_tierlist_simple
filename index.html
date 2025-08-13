@@ -34,7 +34,7 @@
     width: 100%;
   }
   .tier-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
   }
   .tier-header input {
     background: #0f1724; border: none; color: #eee; font-weight: bold; font-size: 16px; border-radius: 4px; padding: 2px 6px;
@@ -45,15 +45,15 @@
     border-radius: 6px; width: 30px; height: 30px;
   }
   .tier-loadouts {
-    flex: 1; overflow-y: auto; background: #0f1724; border-radius: 6px; padding: 6px; 
+    flex: 1; overflow-y: auto; background: #0f1724; border-radius: 6px; padding: 8px; 
   }
   .loadout-card {
-    background: #0e1628; border-radius: 6px; padding: 6px; margin-bottom: 6px;
+    background: #0e1628; border-radius: 6px; padding: 8px; margin-bottom: 8px;
     display: flex; align-items: center; gap: 8px; font-size: 14px;
     user-select:none;
   }
   .loadout-card .thumb {
-    width: 32px; height: 32px; border-radius: 4px;
+    width: 42px; height: 42px; border-radius: 4px;
     display:flex; justify-content:center; align-items:center; font-size: 12px; font-weight: bold;
     color: #ccc; user-select:none;
   }
@@ -71,7 +71,7 @@
     margin-top: 12px; background: #162a42; padding: 12px; border-radius: 8px;
   }
   #addLoadoutPanel select {
-    background: #0f1724; border: none; color: #eee; border-radius: 4px; padding: 6px;
+    background: #0f1724; border: none; color: #eee; border-radius: 4px; padding: 8px;
     font-size: 14px; margin-right: 8px;
     min-width: 120px;
   }
@@ -94,14 +94,16 @@
 </head>
 <body>
 
-<div class="panel" id="mapView">
+<div class="panel" id="mapView" style="position:relative;">
   <button id="toggleMapListBtn" style="background:#0ea5a4;border:none;border-radius:6px;color:#042022;cursor:pointer;padding:6px 12px;font-weight:bold;margin-bottom:8px;">Maps</button>
   <div id="mapImageWrapper" style="flex:1; background:#0f1724; border-radius:8px; display:flex; align-items:center; justify-content:center;">
     <span style="color:#777;">Brak wybranej mapy</span>
   </div>
 
+</div>
 <div id="mapListOverlay" style="display:none; position:absolute; top:60px; left:0; background:rgba(15,23,36,0.95); padding:12px; border-radius:8px; z-index:2000; max-height:80%; overflow-y:auto; width:300px;">
   <div class="map-list" id="mapList"></div>
+</div>
 </div>
 <div class="panel">
   <h2 style="display:flex; justify-content:space-between; align-items:center;">
