@@ -441,6 +441,9 @@ mapImageWrapper.innerHTML = `<img src="${map.img}" alt="${map.name}" style="max-
         tier.loadouts.push(movedLoadout);
         saveTiers();
         renderTiers();
+        return; // stop here if drop handled at container level
+        saveTiers();
+        renderTiers();
       });
 
       // Render loadoutów z draggable
@@ -453,6 +456,30 @@ mapImageWrapper.innerHTML = `<img src="${map.img}" alt="${map.name}" style="max-
         loDiv.addEventListener('dragstart', e => {
           e.dataTransfer.setData('text/plain', `${tier.id}:${idx}`);
           e.dataTransfer.effectAllowed = 'move';
+        });
+
+        // Allow highlight and reorder inside tier
+        loDiv.addEventListener('dragover', ev => {
+          ev.preventDefault();
+          loDiv.style.borderTop = '2px solid #0ea5a4';
+        });
+        loDiv.addEventListener('dragleave', () => {
+          loDiv.style.borderTop = '';
+        });
+        loDiv.addEventListener('drop', ev => {
+          ev.preventDefault();
+          loDiv.style.borderTop = '';
+          const data = ev.dataTransfer.getData('text/plain');
+          if (!data) return;
+          const [srcTierId, srcIdxStr] = data.split(':');
+          const srcIdx = parseInt(srcIdxStr, 10);
+          const srcTier = tiers.find(t => t.id === srcTierId);
+          if (!srcTier) return;
+          const [moved] = srcTier.loadouts.splice(srcIdx, 1);
+          const targetIdx = tier.loadouts.indexOf(lo);
+          tier.loadouts.splice(targetIdx, 0, moved);
+          saveTiers();
+          renderTiers();
         });
 
 // hero
