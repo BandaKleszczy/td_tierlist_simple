@@ -451,7 +451,7 @@ mapImageWrapper.innerHTML = `<img src="${map.img}" alt="${map.name}" style="max-
         loDiv.style.userSelect = 'none';
 
         loDiv.addEventListener('dragstart', e => {
-          e.dataTransfer.setData('text/plain', ${tier.id}:${idx});
+          e.dataTransfer.setData('text/plain', `${tier.id}:${idx}`);
           e.dataTransfer.effectAllowed = 'move';
         });
 
@@ -864,6 +864,7 @@ document.getElementById('importFile').addEventListener('change', function() {
 
 </body>
 </html>
+
 
 
 
