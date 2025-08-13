@@ -443,46 +443,17 @@ mapImageWrapper.innerHTML = `<img src="${map.img}" alt="${map.name}" style="max-
         renderTiers();
       });
 
-// Render loadoutów z draggable
-tier.loadouts.forEach((lo, idx) => {
-  const loDiv = document.createElement('div');
-  loDiv.className = 'loadout-card';
-  loDiv.setAttribute('draggable', 'true');
-  loDiv.style.userSelect = 'none';
+      // Render loadoutów z draggable
+      tier.loadouts.forEach((lo, idx) => {
+        const loDiv = document.createElement('div');
+        loDiv.className = 'loadout-card';
+        loDiv.setAttribute('draggable', 'true');
+        loDiv.style.userSelect = 'none';
 
-  loDiv.addEventListener('dragstart', e => {
-    e.dataTransfer.setData('text/plain', `${tier.id}:${idx}`);
-    e.dataTransfer.effectAllowed = 'move';
-  });
-
-  loDiv.addEventListener('dragover', e => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    loDiv.style.border = '2px dashed #0ea5a4'; // podświetlenie
-  });
-
-  loDiv.addEventListener('dragleave', () => {
-    loDiv.style.border = '';
-  });
-
-  loDiv.addEventListener('drop', e => {
-    e.preventDefault();
-    loDiv.style.border = '';
-
-    const data = e.dataTransfer.getData('text/plain').split(':');
-    const sourceTierId = data[0];
-    const draggedIdx = parseInt(data[1], 10);
-
-    // Przestawiamy tylko w tym samym tierze
-    if (sourceTierId !== tier.id.toString() || draggedIdx === idx) return;
-
-    const movedItem = tier.loadouts.splice(draggedIdx, 1)[0];
-    tier.loadouts.splice(idx, 0, movedItem);
-
-    saveTiers();
-    renderTiers();
-  });
-});
+        loDiv.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', ${tier.id}:${idx});
+          e.dataTransfer.effectAllowed = 'move';
+        });
 
 // hero
 const hero = heroes.find(h => h.id === lo.hero);
@@ -893,6 +864,7 @@ document.getElementById('importFile').addEventListener('change', function() {
 
 </body>
 </html>
+
 
 
 
