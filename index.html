@@ -7,7 +7,7 @@
 <style>
   body {
     margin:0; font-family: system-ui, sans-serif; background:#121a2a; color:#eee;
-    display: grid; grid-template-columns: 260px 1fr 420px; gap: 12px; height: 100vh; padding: 12px;
+    display: grid; grid-template-columns: 1fr 460px; gap: 12px; height: 100vh; padding: 12px;
   }
   .panel {
     background: #1b2541; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; overflow: auto;
@@ -94,17 +94,16 @@
 </head>
 <body>
 
-<div class="panel">
-  <h2>Maps</h2>
-  <div class="map-list" id="mapList"></div>
-</div>
-
 <div class="panel" id="mapView">
-  <h2>Wybierz mapę</h2>
+  <button id="toggleMapListBtn" style="background:#0ea5a4;border:none;border-radius:6px;color:#042022;cursor:pointer;padding:6px 12px;font-weight:bold;margin-bottom:8px;">Maps</button>
   <div id="mapImageWrapper" style="flex:1; background:#0f1724; border-radius:8px; display:flex; align-items:center; justify-content:center;">
     <span style="color:#777;">Brak wybranej mapy</span>
   </div>
+
+<div id="mapListOverlay" style="display:none; position:absolute; top:60px; left:0; background:rgba(15,23,36,0.95); padding:12px; border-radius:8px; z-index:2000; max-height:80%; overflow-y:auto; width:300px;">
+  <div class="map-list" id="mapList"></div>
 </div>
+
 
 <div class="panel">
   <h2 style="display:flex; justify-content:space-between; align-items:center;">
@@ -346,6 +345,7 @@ maps.forEach((mapObj, idx) => {
 
   div.addEventListener('click', () => selectMap(idx));
   mapListEl.appendChild(div);
+  div.addEventListener('click', ()=>{mapListOverlay.style.display='none';});
 });
   }
 
@@ -832,6 +832,18 @@ function checkAssetFiles() {
 // wywołaj test w init() albo ręcznie w konsoli
 checkAssetFiles();
   // Inicjalizacja
+  
+  // Toggle map list overlay
+  const toggleMapListBtn = document.getElementById('toggleMapListBtn');
+  const mapListOverlay = document.getElementById('mapListOverlay');
+  toggleMapListBtn.addEventListener('click', () => {
+    if (mapListOverlay.style.display === 'none') {
+      mapListOverlay.style.display = 'block';
+    } else {
+      mapListOverlay.style.display = 'none';
+    }
+  });
+
   function init() {
     renderMaps();
     initLoadoutSelectors();
